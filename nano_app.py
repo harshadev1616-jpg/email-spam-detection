@@ -262,9 +262,9 @@ with st.sidebar:
     st.markdown(
         """
         <div class="sidebar-note">
-        <strong>Private by design</strong><br>
-        Your email text is analyzed locally by this app and is not added to the
-        evaluation dataset or stored in a database.
+        <strong>No app database storage</strong><br>
+        On Streamlit Cloud, email text is processed on Streamlit's servers. This
+        app does not save it to a database. Avoid entering confidential email.
         </div>
         """,
         unsafe_allow_html=True,

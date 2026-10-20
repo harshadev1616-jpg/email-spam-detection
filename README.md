@@ -12,12 +12,15 @@ and the NLTK language data required by the text-cleaning step:
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m nltk.downloader punkt_tab stopwords
 streamlit run nano_app.py
 ```
 
 On Windows PowerShell, activate the environment with
 `.venv\Scripts\Activate.ps1` instead.
+
+The app downloads the NLTK `punkt_tab` and `stopwords` data on first use and
+caches it in a temporary directory. An internet connection is required the
+first time the scanner is used.
 
 Keep `spam_model.pkl` and `tfidf_vectorizer.pkl` beside `nano_app.py`; the app
 loads these saved artifacts when it starts.
@@ -42,7 +45,8 @@ dataset; it is not a guarantee of accuracy on new or real-world email. Treat
 the classification as a signal, and verify unexpected requests and links.
 
 Avoid entering confidential email in the demo. The app does not save submitted
-messages to a database, but email text is processed locally by the running app.
+messages to a database. When hosted on Streamlit Community Cloud, submitted
+email text is processed on Streamlit's servers, not on the visitor's device.
 
 The `.pkl` files use Python's pickle-based serialization. Only load model
 artifacts from a source you trust.
