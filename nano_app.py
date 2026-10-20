@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from tempfile import gettempdir
 
@@ -8,12 +9,10 @@ import streamlit as st
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 
 APP_DIR = Path(__file__).resolve().parent
-DATA_FILE = APP_DIR / "sample_email_ai_training_large.csv"
+METRICS_FILE = APP_DIR / "model_metrics.json"
 NLTK_DATA_DIR = Path(gettempdir()) / "mailguard_nltk_data"
 
 st.set_page_config(
@@ -194,51 +193,34 @@ def clean_email(text: str, stop_words: set[str]) -> str:
 
 
 @st.cache_data
-def evaluate_model() -> dict[str, object]:
-    data = pd.read_csv(DATA_FILE)
-    required_columns = {"subject", "email_body", "category"}
-    missing_columns = required_columns.difference(data.columns)
-    if missing_columns:
+def load_model_metrics() -> dict[str, object]:
+    with METRICS_FILE.open(encoding="utf-8") as metrics_file:
+        metrics = json.load(metrics_file)
+
+    required_fields = {
+        "accuracy",
+        "precision",
+        "recall",
+        "f1",
+        "confusion",
+        "samples",
+        "test_samples",
+        "spam_samples",
+        "not_spam_samples",
+        "class_counts",
+    }
+    missing_fields = required_fields.difference(metrics)
+    if missing_fields:
         raise ValueError(
-            f"Training data is missing required columns: {', '.join(sorted(missing_columns))}"
+            f"Model metrics are missing fields: {', '.join(sorted(missing_fields))}"
         )
 
-    texts = (
-        data["subject"].fillna("").astype(str)
-        + " "
-        + data["email_body"].fillna("").astype(str)
+    metrics["class_counts"] = (
+        pd.Series(metrics["class_counts"], name="Emails")
+        .rename_axis("Category")
+        .to_frame()
     )
-    labels = (data["category"] == "Spam").astype(int)
-    cleaned_texts = texts.map(lambda text: clean_email(text, load_stop_words()))
-
-    _, test_texts, _, test_labels = train_test_split(
-        cleaned_texts,
-        labels,
-        test_size=0.2,
-        random_state=42,
-        stratify=labels,
-    )
-    model, vectorizer = load_artifacts()
-    predictions = model.predict(vectorizer.transform(test_texts))
-    precision, recall, f1, _ = precision_recall_fscore_support(
-        test_labels,
-        predictions,
-        labels=[0, 1],
-        average="binary",
-        zero_division=0,
-    )
-    return {
-        "accuracy": accuracy_score(test_labels, predictions),
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
-        "confusion": confusion_matrix(test_labels, predictions, labels=[0, 1]),
-        "samples": len(data),
-        "test_samples": len(test_labels),
-        "spam_samples": int(labels.sum()),
-        "not_spam_samples": int((labels == 0).sum()),
-        "class_counts": data["category"].value_counts().rename_axis("Category").to_frame("Emails"),
-    }
+    return metrics
 
 
 def show_page_header(kicker: str, title: str, description: str) -> None:
@@ -283,11 +265,11 @@ except (EOFError, OSError, ValueError, ImportError) as error:
     st.stop()
 
 try:
-    evaluation = evaluate_model()
+    evaluation = load_model_metrics()
 except FileNotFoundError as error:
     evaluation = None
     st.warning(
-        f"Model evaluation is unavailable because {error.filename!r} was not found. "
+        f"Model evaluation file {error.filename!r} is missing. "
         "Email scanning remains available."
     )
 except LookupError:
@@ -298,7 +280,7 @@ except LookupError:
     )
 except (ValueError, KeyError, OSError) as error:
     evaluation = None
-    st.warning(f"Could not calculate model metrics: {error}")
+    st.warning(f"Could not load model metrics: {error}")
 
 if page == "Email scanner":
     show_page_header(
@@ -407,15 +389,15 @@ elif page == "Model performance":
     show_page_header(
         "Transparent evaluation",
         "Measure the model, not the hype.",
-        "These metrics are calculated from the same stratified 80/20 holdout used by "
-        "the training notebook. They are not measured on live email.",
+        "These results were measured on the model’s stratified holdout from the "
+        "project dataset. They are not a live evaluation or a guarantee.",
     )
     if evaluation is None:
-        st.info("Model metrics are unavailable until the training CSV and NLTK data are present.")
+        st.info("Model metrics are unavailable because the published metrics file could not be loaded.")
     else:
         st.caption(
-            f"Evaluation set: {evaluation['test_samples']:,} unseen rows from "
-            f"{evaluation['samples']:,} dataset examples · random_state=42 · stratified split."
+            f"Previously evaluated on {evaluation['test_samples']:,} holdout emails "
+            f"from a {evaluation['samples']:,}-email dataset · stratified 80/20 split."
         )
         metric_columns = st.columns(4)
         metric_columns[0].metric("Accuracy", f"{evaluation['accuracy']:.0%}")

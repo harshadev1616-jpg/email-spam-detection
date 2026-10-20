@@ -27,11 +27,11 @@ loads these saved artifacts when it starts.
 
 ## Model evaluation
 
-The **Model performance** page recalculates accuracy, precision, recall, F1,
-and the confusion matrix from `sample_email_ai_training_large.csv`. That data
-file is intentionally excluded from this public upload because its
-redistribution permission has not been established. Without the CSV, email
-scanning still works, but dataset evaluation is unavailable.
+The **Model performance** page displays accuracy, precision, recall, F1, and
+the confusion matrix from the verified stratified holdout in
+`model_metrics.json`. The source CSV is intentionally excluded because its
+redistribution permission has not been established. Metrics are therefore
+reported from the recorded test run rather than recomputed by the hosted app.
 
 The notebook `email_smap_file.ipynb` is also kept out of the public upload
 because it contains saved training outputs. Add the dataset and notebook to a

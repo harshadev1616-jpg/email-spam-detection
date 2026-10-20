@@ -1,0 +1,25 @@
+{
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "confusion": [
+    [50, 0],
+    [0, 50]
+  ],
+  "samples": 500,
+  "test_samples": 100,
+  "spam_samples": 250,
+  "not_spam_samples": 250,
+  "class_counts": {
+    "Spam": 250,
+    "Feedback": 46,
+    "Internal Operations": 39,
+    "Personal": 36,
+    "Technical Support": 36,
+    "Customer Support": 34,
+    "Transactional": 31,
+    "Marketing": 28
+  },
+  "evaluation_note": "Metrics reproduced from the stratified 80/20 test split with random_state=42 used in the training notebook. Source dataset is not included because redistribution permission is unverified."
+}
