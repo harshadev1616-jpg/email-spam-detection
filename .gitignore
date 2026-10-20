@@ -1,0 +1,28 @@
+# Python environments and cache
+env/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Local credentials and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.streamlit/credentials.toml
+credentials*.json
+*service-account*.json
+*.pem
+*.key
+
+# Local/editor files
+.agents/
+.DS_Store
+Thumbs.db
+
+# Training data and notebook contain data samples and saved outputs;
+# do not publish until redistribution permission has been confirmed.
+/sample_email_ai_training_large.csv
+/email_smap_file.ipynb
