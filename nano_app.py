@@ -1,6 +1,8 @@
 from pathlib import Path
+from tempfile import gettempdir
 
 import joblib
+import nltk
 import pandas as pd
 import streamlit as st
 from nltk.corpus import stopwords
@@ -12,6 +14,7 @@ from sklearn.naive_bayes import MultinomialNB
 
 APP_DIR = Path(__file__).resolve().parent
 DATA_FILE = APP_DIR / "sample_email_ai_training_large.csv"
+NLTK_DATA_DIR = Path(gettempdir()) / "mailguard_nltk_data"
 
 st.set_page_config(
     page_title="MailGuard | Email Security",
@@ -160,6 +163,26 @@ def load_artifacts() -> tuple[MultinomialNB, TfidfVectorizer]:
 
 @st.cache_resource
 def load_stop_words() -> set[str]:
+    nltk_data_path = str(NLTK_DATA_DIR)
+    if nltk_data_path not in nltk.data.path:
+        nltk.data.path.insert(0, nltk_data_path)
+
+    for resource, package in (
+        ("corpora/stopwords", "stopwords"),
+        ("tokenizers/punkt_tab/english/", "punkt_tab"),
+    ):
+        try:
+            nltk.data.find(resource)
+        except LookupError:
+            if not nltk.download(
+                package,
+                download_dir=nltk_data_path,
+                quiet=True,
+            ):
+                raise LookupError(
+                    f"Could not download required NLTK data: {package}."
+                )
+
     return set(stopwords.words("english"))
 
 
